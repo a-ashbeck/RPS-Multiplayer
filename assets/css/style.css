@@ -1,0 +1,4 @@
+#chat-room {
+	height: 250px;
+	overflow-y: scroll !important;
+}
