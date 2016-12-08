@@ -29,10 +29,7 @@ $(document).ready(function() {
 	var userWins = 0;
 	var otherUserWins = 0;
 	var ties = 0;
-	var turn;
 	var numUsers = 0;
-	var usersArray = [];
-	var order = [];
 
 	// When the client's connection state changes...
 	connectedRef.on('value', function(snapshot) {
@@ -50,55 +47,76 @@ $(document).ready(function() {
 			    // Remove user from the connection list when they disconnect.
 			    usersRef.child(userID).onDisconnect().remove();
 
-			    // usersRef.once('value', function(bill) {
-			    // 	bill.forEach(function(hop) {
-			    // 		usersArray.push(hop);
-			    // 	});
-			    // });
-			    // console.log(usersArray.length);
-
 			    usersRef.once('value', function(snapshot) {
 						numUsers = snapshot.numChildren();
 						console.log(numUsers);
 					
+				    usersRef.on('child_added', function(childSnapshot) {
+				    	if (numUsers > 2) {
+				    		$('.container').hide();
+							} else if (userID !== childSnapshot.key) {
+								otherUserID = childSnapshot.key;
+								otherUser.username = childSnapshot.val().username;
+								otherUser.hand = childSnapshot.val().hand;
+								database.ref('users/' + otherUserID).on('value', function(snap) {
+									otherUser.username = snap.val().username;
+									otherUser.hand = snap.val().hand;
+									otherUser.timestamp = snap.val().timestamp;
+									$('#opponent').html(otherUser.username);
+									evaluateHands();
+								});
+							} else if (userID === childSnapshot.key) {
+								database.ref('users/' + userID).on('value', function(snap) {
+									userObj.username = snap.val().username;
+									userObj.hand = snap.val().hand;
+									userObj.timestamp = snap.val().timestamp;
+									evaluateHands();
+								});
+							}
 
-			    usersRef.on('child_added', function(childSnapshot) {
-			    	// console.log(childSnapshot.val());
-			    	
+				      determineOrder();
+						});
+					});
 
-			    	// console.log(usersArray.length);
-			    	// console.log(prevChildKey);
+					$('#message-btn').on('click', function() {
+
+					  // Grabs user input
+					  var messageInput = $('#message-input').val().trim();
 
 
-			    	
+					  // Creates local object for holding message data
+					  var message = {
+					  	timestamp: firebase.database.ServerValue.TIMESTAMP
+					    user: localUsername,
+					    message: messageInput,
+					  };
 
+					  if (messageInput !== '') {
 
-			    	if (numUsers > 2) {
-			    		$('.container').hide();
-						} else if (userID !== childSnapshot.key) {
-							otherUserID = childSnapshot.key;
-							otherUser.username = childSnapshot.val().username;
-							otherUser.hand = childSnapshot.val().hand;
-							database.ref('users/' + otherUserID).on('value', function(snap) {
-								otherUser.username = snap.val().username;
-								otherUser.hand = snap.val().hand;
-								otherUser.timestamp = snap.val().timestamp;
-								$('#opponent').html(otherUser.username);
-								evaluateHands();
-							});
-						} else if (userID === childSnapshot.key) {
-							database.ref('users/' + userID).on('value', function(snap) {
-								userObj.username = snap.val().username;
-								userObj.hand = snap.val().hand;
-								userObj.timestamp = snap.val().timestamp;
-								evaluateHands();
-							});
+						  // Uploads message data to the database
+						  database.ref().child('messenger').push(message);
+
+						  // Clears the text-box
+						  $('#message-input').val('');
 						}
-						usersArray = [];
 
-			      determineOrder();
+					  // Prevents moving to new page
+					  return false;
 					});
+
+					// Sets messenger updates to DOM GOOD
+					database.ref('messenger').on('child_added', function(childSnapshot, prevChildKey) {
+
+					  // Store everything into a variable.
+					  var screenname = childSnapshot.val().user;
+					  var messageInput = childSnapshot.val().message;
+					  var time = moment(childSnapshot.val().timestamp).format('M/D/YY h:mm:s a');
+
+					  // Add message to chat room
+					  $('#chat-room').append('<p>' + screenname + ' - ' + time + ': ' + messageInput + '<p>');
+					  $('#chat-room').scrollTop($('#chat-room')[0].scrollHeight);
 					});
+
 
 		    	// Sets username GOOD
 					$('#set-username').on('click', function() {
@@ -115,7 +133,6 @@ $(document).ready(function() {
 							hand: $(this).text()
 						});
 
-						turnCounterRef.set(otherUserID);
 						$('.hand-btn').hide();
 					});
 				} else {
@@ -130,21 +147,6 @@ $(document).ready(function() {
 			});
 	  }
 	});
-
-	function determineOrder() {
-		// Determine which user was in the game first
-	  if ((otherUser.timestamp > userObj.timestamp)) {
-	  	turnCounterRef.set(userID);
-	  } else if (otherUser.timestamp < userObj.timestamp) {
-	  	turnCounterRef.set(otherUserID);
-	  } else {
-	  	turnCounterRef.set(userID);
-	  }
-
-	  turnCounterRef.on('value', function(snapshot) {
-	  	turn = snapshot.val();
-	  });
-	}
 
 	function endGameAndRestart() {
 		$('#winner').html(winner);
