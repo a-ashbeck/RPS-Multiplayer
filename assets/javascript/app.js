@@ -12,15 +12,215 @@ $(document).ready(function() {
 
 	// Create a variable to reference the database.
 	var database = firebase.database();
-	var username;
 
+	var localUsername = '';
+	var yourWins = 0;
+	var opponentsWins;
+	var localLosses = 0;
+	var ties = 0;
+	var opponent = '';
+	var yourHand = '';
+	var winner = '';
+	var opponentsHand;
+	var gameFree;
+	var userOne;
+	var userTwo;
+
+
+	// Update DOM with DB changes
+	database.ref().on('value', function(snapshot) {
+		if (localUsername === database.ref().userOneUsername) {
+			opponent = snapshot.val().userTwoUsername;
+			yourHand = snapshot.val().userOneHand;
+			opponentsHand = snapshot.val().userTwoHand
+			yourWins = snapshot.val().userOneWins;
+			opponentsWins = snapshot.val().userTwoWins
+		} else if (localUsername === snapshot.val().userTwoUsername) {
+			opponent = snapshot.val().userOneUsername;
+			yourHand = snapshot.val().userTwoHand;
+			opponentsHand = snapshot.val().userOneHand
+			yourWins = snapshot.val().userTwoWins;
+			opponentsWins = snapshot.val().userOneWins
+		}
+
+		userOne = snapshot.val().userOneUsername;
+		userTwo = snapshot.val().userTwoUsername;
+		ties = snapshot.val().ties;
+
+		$('#opponent').html(opponent);
+		$('#opponent-hand').html(opponentsHand);
+		$('#winner').html(winner);
+		$('#wins').html(yourWins);
+		$('#losses').html(opponentsWins);
+		$('#ties').html(ties);
+		// $('.hand-btn').disable();
+	});
+
+	// // This function determines how many players exist when starting a game, and sets the gameboard accordingly
+	// function determineIfThereAreTwoPlayers() {
+	// 	if (snapshot.val().userOneUsername && snapshot.val().userTwoUsername === '') {
+	// 		database.ref('userOneUsername').update(localUsername);
+	// 		// lock additional users from clicking buttons to start game
+	// 		// pop-up modal will give warning and ask to please wait until a player leaves the game
+	// 	} else if ((snapshot.val().userOneUsername !== '') && 
+	// 						 (snapshot.val().userTwoUsername === '')) {
+	// 		database.ref('userTwoUsername').update(localUsername);
+	// 		gameFree = false;
+	// 	} else if ((gameFree === false) &&
+	// 						 (localUsername !== snapshot.val().userOneUsername || snapshot.val().userTwoUsername)) {
+	// 		// Placeholder alert
+	// 		alert('This game is full. Please wait until a player leaves before trying again'); 
+	// 		// toggle container to display error/modal/whatever
+	// 	}
+
+
+	// Sets username GOOD
 	$('#set-username').on('click', function() {
-		username = $('#username').val().trim();
+		localUsername = $('#username').val().trim();
+		console.log(userOne);
+
+		if (userOne === '') {
+			database.ref().update({
+				userOneUsername: localUsername
+			});
+		} else {
+			database.ref().update({
+				userTwoUsername: localUsername
+			});
+		}
+
 		$('#username').val('');
 	});
 
+	// On a value change from setHand, this will calculate the game outcome and update the results in the database
+	$('.hand-btn').on('click', function() {
+		console.log($(this).text());
+		if (localUsername === userOne) {
+			database.ref().update({
+				userOneHand: $(this).text()
+			});
+		} else if (localUsername === userTwo) {
+			database.ref().update({
+				userTwoHand: $(this).text()
+			});
+		}
 
-	// Messenger functions
+		if (yourHand && opponentsHand !== '') {
+			if (
+				(yourHand === 'Rock') && (opponentsHand === 'Scissors') ||
+				(yourHand === 'Scissors') && (opponentsHand === 'Paper') ||
+				(yourHand === 'Paper') && (opponentsHand === 'Rock')
+			) {
+				yourWins++;
+				winner = localUsername;
+			} else if (
+				(yourHand === 'Rock') && (opponentsHand === 'Paper') ||
+				(yourHand === 'Scissors') && (opponentsHand === 'Rock') ||
+				(yourHand === 'Paper') && (opponentsHand === 'Scissors')
+			){
+				opponentsWins++;
+				winner = opponent;
+			} else if (yourHand === opponentsHand){
+				ties++;
+				winner = 'No Winner'
+			}
+
+			if (localUsername === userOne) {
+				database.ref().update({
+					userOneHand: yourHand
+				});
+				database.ref().update({
+					userTwoHand: opponentsHand
+				});
+				database.ref().update({
+					userOneWins: yourWins
+				});
+				database.ref().update({
+					userTwoWins: opponentsWins
+				});
+			} else if (localUsername === userTwo) {
+				database.ref().update({
+					userTwoHand: yourHand
+				});
+				database.ref().update({
+					userOneHand: opponentsHand
+				});
+				database.ref().update({
+					userTwoWins: yourWins
+				});
+				database.ref().update({
+					userOneWins: opponentsWins
+				});
+			}
+
+			database.ref().update({
+				ties: ties
+			});
+		}
+	});
+
+
+
+	function startNewRound() {
+		$('#start-new-round').on('click', function() {
+			database.ref('userOneHand').update('');
+			database.ref('userTwoHand').update('');
+		});
+	}
+
+	// Disconnect event
+	$('#leave-game').on('click', function() {
+		if (localUsername === snapshot.val().userOneUsername) {
+			database.ref().update({
+				userOneHand: ''
+			});
+			database.ref().update({
+				userOneWins: winsOne
+			});
+			database.ref().update({
+				userTwoWins: winsTwo
+			});
+			database.ref().update({
+				userOneLosses: 0
+			});
+			database.ref().update({
+				userTwoLosses: 0
+			});
+			database.ref().update({
+				ties: 0
+			});
+		} else if (localUsername === snapshot.val().userTwoUsername) {
+			database.ref().update({
+				userTwoHand: ''
+			});
+			database.ref().update({
+				userOneWins: winsOne
+			});
+			database.ref().update({
+				userTwoWins: winsTwo
+			});
+			database.ref().update({
+				userOneLosses: 0
+			});
+			database.ref().update({
+				userTwoLosses: 0
+			});
+			database.ref().update({
+				ties: 0
+			});
+		}
+
+		// determineIfThereAreTwoPlayers();
+	});
+
+
+
+
+
+
+
+
+	// Messenger functions GOOD
 	$('#message-btn').on('click', function() {
 
 	  // Grabs user input
@@ -29,18 +229,14 @@ $(document).ready(function() {
 
 	  // Creates local object for holding message data
 	  var message = {
-	    user: username,
+	    user: localUsername,
 	    message: messageInput,
 	  };
 
 	  if (messageInput !== '') {
 
 		  // Uploads message data to the database
-		  database.ref().push(message);
-
-		  // Logs everything to console
-		  console.log(message.user);
-		  console.log(message.message);
+		  database.ref().child('messenger').push(message);
 
 		  // Clears the text-box
 		  $('#message-input').val('');
@@ -50,74 +246,41 @@ $(document).ready(function() {
 	  return false;
 	});
 
-	database.ref().on('child_added', function(childSnapshot, prevChildKey) {
-
-	  console.log(childSnapshot.val());
+	// Sets messenger updates to DOM GOOD
+	database.ref('messenger').on('child_added', function(childSnapshot, prevChildKey) {
 
 	  // Store everything into a variable.
-	  var username = childSnapshot.val().user;
+	  var screenname = childSnapshot.val().user;
 	  var messageInput = childSnapshot.val().message;
 
-	  // log info
-	  console.log(username);
-	  console.log(messageInput);
-
 	  // Add message to chat room
-	  $('#chat-room').append('<tr><td>' + username + '</td><td>: :</td><td>' + messageInput + '</td></tr>');
+	  $('#chat-room').append('<tr><td>' + screenname + '</td><td>: :</td><td>' + messageInput + '</td></tr>');
 	  $('#chat-room').scrollTop($('#chat-room')[0].scrollHeight);
 	});
 });
 
 
-// // Sets the computer choices 
-// var computerChoices = ['r', 'p', 's'];
 
-// // Declares the tallies to 0 
-// var wins = 0;
-// var losses = 0;
-// var ties = 0;
 
-// // When the user presses the key it records the keypress and then sets it to userguess
-// document.onkeyup = function(event) {
-// 	var userGuess = String.fromCharCode(event.keyCode).toLowerCase();
 
-// 	// This sets the computer guess equal to the random.
-// 	var computerGuess = computerChoices[Math.floor(Math.random() * computerChoices.length)];
 
-// 	// Making sure the user chooses r, p, or s
-// 	if ((userGuess == 'r') || (userGuess == 'p') || (userGuess == 's')){
 
-// 		// It tests to determine if the computer or the user won the round and then increments 
-// 		if ((userGuess == 'r') && (computerGuess == 's')){
-// 			wins++;
-// 		}else if ((userGuess == 'r') && (computerGuess == 'p')){
-// 			losses++;
-// 		}else if ((userGuess == 's') && (computerGuess == 'r')){
-// 			losses++;
-// 		}else if ((userGuess == 's') && (computerGuess == 'p')){
-// 			wins++;
-// 		}else if ((userGuess == 'p') && (computerGuess == 'r')){
-// 			wins++;
-// 		}else if ((userGuess == 'p') && (computerGuess == 's')){
-// 			losses++;
-// 		}else if (userGuess == computerGuess){
-// 			ties++;
-// 		}  
 
-// 		// Taking the tallies and displaying them in HTML
-// 		var html = '<p>Press r, p or s to start playing</p>' +
-// 		'<p>wins: ' + 
-// 		wins + 
-// 		'</p>' +
-// 		'<p>losses: ' + 
-// 		losses + 
-// 		'</p>' +
-// 		'<p>ties: ' + 
-// 		ties + 
-// 		'</p>';
 
-// 		// Placing the html into the game ID
-// 		document.querySelector('#game').innerHTML = html;
 
-// 	}
-// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

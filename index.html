@@ -6,25 +6,48 @@
 	<title>Rock, Paper, Scissors!</title>
 	<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/slate/bootstrap.min.css" rel="stylesheet" integrity="sha384-RpX8okQqCyUNG7PlOYNybyJXYTtGQH+7rIKiVvg1DLg6jahLEk47VvpUyS+E2/uJ" crossorigin="anonymous">
 	<link rel="stylesheet" type="text/css" href="assets/css/style.css">
-	<script src="https://www.gstatic.com/firebasejs/3.6.1/firebase.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/3.6.3/firebase.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.16.0/moment.min.js" integrity="sha256-cPV18mnKeXm349/LJ+fcY51Ts2ygt+cWpZCzc3YzEus=" crossorigin="anonymous"></script>
 	<script src="https://code.jquery.com/jquery-2.2.3.js" integrity="sha256-laXWtGydpwqJ8JA+X9x2miwmaiKhn8tVmOVEigRNtP4=" crossorigin="anonymous"></script>
-	<script src="assets/javascript/app.js"></script>
+	<script src="assets/javascript/app3.js"></script>
 </head>
 <body>
+	<div class="jumbotron">
+		<h1 class="text-center">RPS RAGE</h1>
+	</div>
+	<div id="conatiner-1" class="container">
+		<div class="row">
+			<div class="panel panel-default col-sm-5 col-xs-12">
+				<div class="form-group">
+				  <input class="form-control" id="username" type="text" placeholder="Enter username here">
+				</div>
 
-	<div class="container">
-		<div class="row"></div>
+				<button id="set-username" class="btn btn-success">Set Username</button>
+
+				<button class="btn btn-primary hand-btn">Rock</button>
+				<button class="btn btn-primary hand-btn">Paper</button>
+				<button class="btn btn-primary hand-btn">Scissors</button>
+			</div>
+			<div class="panel panel-default col-sm-5 col-xs-12 pull-right">
+				<h2>Opponent:</h2>
+				<p id="opponent"></p>
+				<h3>Opponent Hand:</h3>
+				<p id="opponent-hand"></p>
+				<h3>Winner:</h3>
+				<p id="winner"></p>
+				<h4>Wins:</h4>
+				<p id="wins"></p>
+				<h4>Losses:</h4>
+				<p id="losses"></p>
+				<h4>Ties:</h4>
+				<p id="ties"></p>
+			</div>
+		</div>
 
 		<div class="row">
 			<div class="panel panel-default col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
 			  <div class="panel-body">
 			  	<div id="chat-room" class="well"></div>
-
-					<div class="form-group">
-					  <input class="form-control" id="username" type="text" placeholder="Enter your username here ONCE...">
-					</div>
-
-					<button id="set-username" class="btn btn-success">Set Username</button>
 
 					<div class="form-group">
 					  <input class="form-control" id="message-input" type="text" placeholder="Type here...">
@@ -33,6 +56,14 @@
 					<button id="message-btn" class="btn btn-success">Send</button>
 			  </div>
 			</div>
+		</div>
+	</div>
+
+	<div id="container-2" class="container">
+		<div class="panel panel-default">
+			<h1>SORRY!</h1>
+			<h3>The game is currently full.</h3>
+			<h3>Please try again later.</h3>
 		</div>
 	</div>
 </body>
