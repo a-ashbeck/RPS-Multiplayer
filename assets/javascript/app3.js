@@ -14,28 +14,28 @@ $(document).ready(function() {
 	var database = firebase.database();
 	var usersRef = database.ref('users/');
 	var connectedRef = database.ref('.info/connected');
-	var turnCounterRef = database.ref('turn')
 	var userObj = {
 			username: '',
 			hand: '',
 			wins: 0,
-			losses: 0,
-			timestamp: firebase.database.ServerValue.TIMESTAMP
+			losses: 0
 		};
 	var userID;
-	var otherUser = {};
+	var otherUser = {
+			username: '',
+			hand: '',
+			wins: 0,
+			losses: 0
+		};
 	var otherUserID;
 	var winner = '';
-	var userWins = 0;
-	var otherUserWins = 0;
-	var ties = 0;
 	var numUsers = 0;
+
+	$('#container-1').show();
+	$('#container-2').hide();
 
 	// When the client's connection state changes...
 	connectedRef.on('value', function(snapshot) {
-
-		
-
 	  // If they are connected...
 	  if (snapshot.val()) {
 	  	firebase.auth().onAuthStateChanged(function(user) {
@@ -49,11 +49,11 @@ $(document).ready(function() {
 
 			    usersRef.once('value', function(snapshot) {
 						numUsers = snapshot.numChildren();
-						console.log(numUsers);
 					
 				    usersRef.on('child_added', function(childSnapshot) {
 				    	if (numUsers > 2) {
-				    		$('.container').hide();
+				    		$('#container-1').hide();
+				    		$('#container-2').show();
 							} else if (userID !== childSnapshot.key) {
 								otherUserID = childSnapshot.key;
 								otherUser.username = childSnapshot.val().username;
@@ -61,7 +61,7 @@ $(document).ready(function() {
 								database.ref('users/' + otherUserID).on('value', function(snap) {
 									otherUser.username = snap.val().username;
 									otherUser.hand = snap.val().hand;
-									otherUser.timestamp = snap.val().timestamp;
+
 									$('#opponent').html(otherUser.username);
 									evaluateHands();
 								});
@@ -69,12 +69,9 @@ $(document).ready(function() {
 								database.ref('users/' + userID).on('value', function(snap) {
 									userObj.username = snap.val().username;
 									userObj.hand = snap.val().hand;
-									userObj.timestamp = snap.val().timestamp;
 									evaluateHands();
 								});
 							}
-
-				      determineOrder();
 						});
 					});
 
@@ -86,8 +83,8 @@ $(document).ready(function() {
 
 					  // Creates local object for holding message data
 					  var message = {
-					  	timestamp: firebase.database.ServerValue.TIMESTAMP
-					    user: localUsername,
+					  	timestamp: firebase.database.ServerValue.TIMESTAMP,
+					    user: userObj.username,
 					    message: messageInput,
 					  };
 
@@ -136,10 +133,11 @@ $(document).ready(function() {
 						$('.hand-btn').hide();
 					});
 				} else {
-					// // User is signed out
-					console.log("Player is signed out");
-					$('.container').hide();
 
+					$('#container-1').hide();
+					$('#container-2').show();
+
+					// Logs Firebase error to the console if an anon login issue occurred
 					firebase.auth().signInAnonymously().catch(function(error) {
 						console.log( error.code + ": " + error.message );
 					})
@@ -151,13 +149,15 @@ $(document).ready(function() {
 	function endGameAndRestart() {
 		$('#winner').html(winner);
 		$('#opponent-hand').html(otherUser.hand);
+		$('#wins').html(userObj.wins);
+		$('#losses').html(otherUser.wins);
+		$('#ties').html(userObj.ties);
 
 		setTimeout(function(){
 			usersRef.child(userID).update({
-				hand: ''
-			});
-			usersRef.child(userID).update({
-				wins: userWins
+				hand: '',
+				wins: userObj.wins,
+				losses: otherUser.wins
 			});
 
 			winner = '';
@@ -171,13 +171,12 @@ $(document).ready(function() {
 
 	function evaluateHands() {
 		if (userObj.hand && otherUser.hand !== null) {
-			console.log('evaluateHands= ' + userObj.hand + ' + ' + otherUser.hand);
 			if (
 				(userObj.hand === 'Rock') && (otherUser.hand === 'Scissors') ||
 				(userObj.hand === 'Scissors') && (otherUser.hand === 'Paper') ||
 				(userObj.hand === 'Paper') && (otherUser.hand === 'Rock')
 			) {
-				userWins++;
+				userObj.wins++;
 				winner = userObj.username;
 				endGameAndRestart();
 			} else if (
@@ -185,17 +184,15 @@ $(document).ready(function() {
 				(userObj.hand === 'Scissors') && (otherUser.hand === 'Rock') ||
 				(userObj.hand === 'Paper') && (otherUser.hand === 'Scissors')
 			){
-				otherUserWins++;
+				otherUser.wins++;
 				winner = otherUser.username;
 				endGameAndRestart();
 			} else if (userObj.hand === otherUser.hand){
-				ties++;
-				winner = 'No Winner'
+				winner = 'TIED! No Winner'
 				endGameAndRestart();
 			}
 		} else {
 			return;
 		}
-		console.log(winner);
 	};
 });
