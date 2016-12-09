@@ -1,85 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Rock, Paper, Scissors!</title>
-	<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cerulean/bootstrap.min.css" rel="stylesheet" integrity="sha384-zF4BRsG/fLiTGfR9QL82DrilZxrwgY/+du4p/c7J72zZj+FLYq4zY00RylP9ZjiT" crossorigin="anonymous">
-	<link rel="stylesheet" type="text/css" href="assets/css/style.css">
-	<script src="https://www.gstatic.com/firebasejs/3.6.3/firebase.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.16.0/moment.min.js" integrity="sha256-cPV18mnKeXm349/LJ+fcY51Ts2ygt+cWpZCzc3YzEus=" crossorigin="anonymous"></script>
-	<script src="https://code.jquery.com/jquery-2.2.3.js" integrity="sha256-laXWtGydpwqJ8JA+X9x2miwmaiKhn8tVmOVEigRNtP4=" crossorigin="anonymous"></script>
-	<script src="assets/javascript/app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rock, Paper, Scissors!</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/cerulean/bootstrap.min.css" rel="stylesheet" integrity="sha384-zF4BRsG/fLiTGfR9QL82DrilZxrwgY/+du4p/c7J72zZj+FLYq4zY00RylP9ZjiT" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="assets/css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/3.6.3/firebase.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.16.0/moment.min.js" integrity="sha256-cPV18mnKeXm349/LJ+fcY51Ts2ygt+cWpZCzc3YzEus=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-2.2.3.js" integrity="sha256-laXWtGydpwqJ8JA+X9x2miwmaiKhn8tVmOVEigRNtP4=" crossorigin="anonymous"></script>
+    <script src="assets/javascript/app.js"></script>
 </head>
+
 <body>
-	<div class="jumbotron">
-		<h1 class="text-center">RPS RAGE</h1>
-	</div>
-	<div id="container-1" class="container">
-		<div class="row">
-			<div class="panel panel-default col-sm-5 col-xs-12">
-				<fieldset>
-					<legend>Welcome to RPS RAGE!</legend>
-					<div class="form-group">
-					  <input class="form-control" id="username" type="text" placeholder="Enter username here">
-					</div>
-		
-					<div class="form-group">
-						<button id="set-username" class="btn btn-success">Set Username</button>
-					</div>
-
-					<div class="form-group">
-						<button class="btn btn-info hand-btn">Rock</button>
-						<button class="btn btn-warning hand-btn">Paper</button>
-						<button class="btn btn-danger hand-btn">Scissors</button>
-					</div>
-				</fieldset>
-			</div>
-			<div class="panel panel-default col-sm-5 col-xs-12 pull-right">
-				<div class="row">
-					<h2 class="col-xs-6 pull-left">Opponent:</h2>
-					<h2 class="col-xs-6 pull-right" id="opponent"></h2>
-				</div>
-				<div class="row">
-					<h2 class="col-xs-6 pull-left">Opponent Hand:</h2>
-					<h2 class="col-xs-6 pull-right" id="opponent-hand"></h2>
-				</div>
-				<div class="row">
-					<h2 class="col-xs-6 pull-left">Winner:</h2>
-					<h2 class="col-xs-6 pull-right" id="winner"></h2>
-				</div>
-				<div class="row">
-					<h3 class="col-xs-6 pull-left">Wins:</h3>
-					<h3 class="col-xs-6 pull-right" id="wins"></h3>
-				</div>
-				<div class="row">
-					<h3 class="col-xs-6 pull-left">Losses:</h3>
-					<h3 class="col-xs-6 pull-right" id="losses"></h3>
-				</div>
-			</div>
-		</div>
-
-		<div class="row">
-			<div class="panel panel-default col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
-			  <div class="panel-body">
-			  	<div id="chat-room" class="well"></div>
-
-					<div class="form-group">
-					  <input class="form-control" id="message-input" type="text" placeholder="Type here...">
-					</div>
-
-					<button id="message-btn" class="btn btn-info">Send</button>
-			  </div>
-			</div>
-		</div>
-	</div>
-
-	<div id="container-2" class="container">
-		<div class="panel panel-default">
-			<h1>SORRY!</h1>
-			<h3>The game is currently full.</h3>
-			<h3>Please try again later.</h3>
-		</div>
-	</div>
+    <div class="jumbotron">
+        <h1 class="text-center">RPS RAGE</h1>
+    </div>
+    <div id="container-1" class="container">
+        <div class="row">
+            <div class="panel panel-default col-sm-5 col-xs-12">
+                <fieldset>
+                    <legend>Welcome to RPS RAGE!</legend>
+                    <div class="form-group">
+                        <input class="form-control" id="username" type="text" placeholder="Enter username here">
+                    </div>
+                    <div class="form-group">
+                        <button id="set-username" class="btn btn-success">Set Username</button>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-info hand-btn">Rock</button>
+                        <button class="btn btn-warning hand-btn">Paper</button>
+                        <button class="btn btn-danger hand-btn">Scissors</button>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="panel panel-default col-sm-5 col-xs-12 pull-right">
+                <div class="row">
+                    <h2 class="col-xs-6 pull-left">Opponent:</h2>
+                    <h2 class="col-xs-6 pull-right" id="opponent"></h2>
+                </div>
+                <div class="row">
+                    <h2 class="col-xs-6 pull-left">Opponent Hand:</h2>
+                    <h2 class="col-xs-6 pull-right" id="opponent-hand"></h2>
+                </div>
+                <div class="row">
+                    <h2 class="col-xs-6 pull-left">Winner:</h2>
+                    <h2 class="col-xs-6 pull-right" id="winner"></h2>
+                </div>
+                <div class="row">
+                    <h3 class="col-xs-6 pull-left">Wins:</h3>
+                    <h3 class="col-xs-6 pull-right" id="wins"></h3>
+                </div>
+                <div class="row">
+                    <h3 class="col-xs-6 pull-left">Losses:</h3>
+                    <h3 class="col-xs-6 pull-right" id="losses"></h3>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="panel panel-default col-md-6 col-md-offset-3 col-sm-12 col-xs-12">
+                <div class="panel-body">
+                    <div id="chat-room" class="well"></div>
+                    <div class="form-group">
+                        <input class="form-control" id="message-input" type="text" placeholder="Type here...">
+                    </div>
+                    <button id="message-btn" class="btn btn-info">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="container-2" class="container">
+        <div class="panel panel-default">
+            <h1>SORRY!</h1>
+            <h3>The game is currently full.</h3>
+            <h3>Please try again later.</h3>
+        </div>
+    </div>
 </body>
+
 </html>
