@@ -12,275 +12,238 @@ $(document).ready(function() {
 
 	// Create a variable to reference the database.
 	var database = firebase.database();
-
-	var localUsername = '';
-	var yourWins = 0;
-	var opponentsWins;
-	var localLosses = 0;
-	var ties = 0;
-	var opponent = '';
-	var yourHand = '';
+	var usersRef = database.ref('users/');
+	var connectedRef = database.ref('.info/connected');
+	var userObj = {
+			username: '',
+			hand: '',
+			wins: 0,
+			losses: 0
+		};
+	var userID;
+	var otherUserObj = {
+			username: '',
+			hand: '',
+			wins: 0,
+			losses: 0
+		};
+	var otherUserID;
 	var winner = '';
-	var opponentsHand;
-	var gameFree;
-	var userOne;
-	var userTwo;
+	var numUsers = 0;
 
+	showGameBoard();
 
-	// Update DOM with DB changes
-	database.ref().on('value', function(snapshot) {
-		if (localUsername === database.ref().userOneUsername) {
-			opponent = snapshot.val().userTwoUsername;
-			yourHand = snapshot.val().userOneHand;
-			opponentsHand = snapshot.val().userTwoHand
-			yourWins = snapshot.val().userOneWins;
-			opponentsWins = snapshot.val().userTwoWins
-		} else if (localUsername === snapshot.val().userTwoUsername) {
-			opponent = snapshot.val().userOneUsername;
-			yourHand = snapshot.val().userTwoHand;
-			opponentsHand = snapshot.val().userOneHand
-			yourWins = snapshot.val().userTwoWins;
-			opponentsWins = snapshot.val().userOneWins
-		}
+	// Users Firebase magic to detect when a new user joins
+	connectedRef.on('value', function(snapshot) {
+	  // If they are connected...
+	  if (snapshot.val()) {
+	  	// User is set with an anonymous Firebase authentification ID
+	  	firebase.auth().onAuthStateChanged(function(user) {
+				if (user) {
+					// Firebase ID is the same as the child key for the object
+					// setting it to the userID variable
+					userID = user.uid;
 
-		userOne = snapshot.val().userOneUsername;
-		userTwo = snapshot.val().userTwoUsername;
-		ties = snapshot.val().ties;
+					// Sets the local user object to the object created by firebase upon auth
+					usersRef.child(userID).set(userObj);
 
-		$('#opponent').html(opponent);
-		$('#opponent-hand').html(opponentsHand);
-		$('#winner').html(winner);
-		$('#wins').html(yourWins);
-		$('#losses').html(opponentsWins);
-		$('#ties').html(ties);
-		// $('.hand-btn').disable();
+			    // Remove user from the connection list when they disconnect.
+			    usersRef.child(userID).onDisconnect().remove();
+
+			    // The first time a user is established, check ONCE for the number of users
+			    usersRef.once('value', function(snapshot) {
+						numUsers = snapshot.numChildren();
+					
+						// When a user is added, evaluate the game action
+				    usersRef.on('child_added', function(childSnapshot) {
+				    	rpsGameAction(childSnapshot);
+						});
+					});
+
+					sendMessage();
+
+					// Sets messenger updates to DOM
+					database.ref('messenger').on('child_added', function(childSnapshot) {
+						showMessage(childSnapshot);
+					});
+
+					setUsername();
+		    	setHand();
+				} else {
+					hideGameBoard();
+
+					// Logs Firebase error to the console if an anon login issue occurred
+					firebase.auth().signInAnonymously().catch(function(error) {
+						console.log( error.code + ": " + error.message );
+					})
+				}
+			});
+	  }
 	});
 
-	// // This function determines how many players exist when starting a game, and sets the gameboard accordingly
-	// function determineIfThereAreTwoPlayers() {
-	// 	if (snapshot.val().userOneUsername && snapshot.val().userTwoUsername === '') {
-	// 		database.ref('userOneUsername').update(localUsername);
-	// 		// lock additional users from clicking buttons to start game
-	// 		// pop-up modal will give warning and ask to please wait until a player leaves the game
-	// 	} else if ((snapshot.val().userOneUsername !== '') && 
-	// 						 (snapshot.val().userTwoUsername === '')) {
-	// 		database.ref('userTwoUsername').update(localUsername);
-	// 		gameFree = false;
-	// 	} else if ((gameFree === false) &&
-	// 						 (localUsername !== snapshot.val().userOneUsername || snapshot.val().userTwoUsername)) {
-	// 		// Placeholder alert
-	// 		alert('This game is full. Please wait until a player leaves before trying again'); 
-	// 		// toggle container to display error/modal/whatever
-	// 	}
+	// Shows the game board
+	function showGameBoard() {
+		$('#container-1').show();
+		$('#container-2').hide();
+	}
 
+	// Hides the game board in case of error or interloper
+	function hideGameBoard() {
+		$('#container-1').hide();
+		$('#container-2').show();
+	}
 
-	// Sets username GOOD
-	$('#set-username').on('click', function() {
-		localUsername = $('#username').val().trim();
-		console.log(userOne);
-
-		if (userOne === '') {
-			database.ref().update({
-				userOneUsername: localUsername
+	// Sets your hand in firebase
+	function setHand() {
+		$('.hand-btn').on('click', function() {
+			// sets user hand in firebase
+			usersRef.child(userID).update({
+				hand: $(this).text()
 			});
-		} else {
-			database.ref().update({
-				userTwoUsername: localUsername
-			});
-		}
 
-		$('#username').val('');
-	});
-
-	// On a value change from setHand, this will calculate the game outcome and update the results in the database
-	$('.hand-btn').on('click', function() {
-		console.log($(this).text());
-		if (localUsername === userOne) {
-			database.ref().update({
-				userOneHand: $(this).text()
-			});
-		} else if (localUsername === userTwo) {
-			database.ref().update({
-				userTwoHand: $(this).text()
-			});
-		}
-
-		if (yourHand && opponentsHand !== '') {
-			if (
-				(yourHand === 'Rock') && (opponentsHand === 'Scissors') ||
-				(yourHand === 'Scissors') && (opponentsHand === 'Paper') ||
-				(yourHand === 'Paper') && (opponentsHand === 'Rock')
-			) {
-				yourWins++;
-				winner = localUsername;
-			} else if (
-				(yourHand === 'Rock') && (opponentsHand === 'Paper') ||
-				(yourHand === 'Scissors') && (opponentsHand === 'Rock') ||
-				(yourHand === 'Paper') && (opponentsHand === 'Scissors')
-			){
-				opponentsWins++;
-				winner = opponent;
-			} else if (yourHand === opponentsHand){
-				ties++;
-				winner = 'No Winner'
-			}
-
-			if (localUsername === userOne) {
-				database.ref().update({
-					userOneHand: yourHand
-				});
-				database.ref().update({
-					userTwoHand: opponentsHand
-				});
-				database.ref().update({
-					userOneWins: yourWins
-				});
-				database.ref().update({
-					userTwoWins: opponentsWins
-				});
-			} else if (localUsername === userTwo) {
-				database.ref().update({
-					userTwoHand: yourHand
-				});
-				database.ref().update({
-					userOneHand: opponentsHand
-				});
-				database.ref().update({
-					userTwoWins: yourWins
-				});
-				database.ref().update({
-					userOneWins: opponentsWins
-				});
-			}
-
-			database.ref().update({
-				ties: ties
-			});
-		}
-	});
-
-
-
-	function startNewRound() {
-		$('#start-new-round').on('click', function() {
-			database.ref('userOneHand').update('');
-			database.ref('userTwoHand').update('');
+			// hides hand btn choices
+			$('.hand-btn').hide();
 		});
 	}
 
-	// Disconnect event
-	$('#leave-game').on('click', function() {
-		if (localUsername === snapshot.val().userOneUsername) {
-			database.ref().update({
-				userOneHand: ''
+	// Sets username and sends to firebase
+	function setUsername() {
+		$('#set-username').on('click', function() {
+			// sets username in firebase
+			usersRef.child(userID).update({
+				username: $('#username').val().trim()
 			});
-			database.ref().update({
-				userOneWins: winsOne
-			});
-			database.ref().update({
-				userTwoWins: winsTwo
-			});
-			database.ref().update({
-				userOneLosses: 0
-			});
-			database.ref().update({
-				userTwoLosses: 0
-			});
-			database.ref().update({
-				ties: 0
-			});
-		} else if (localUsername === snapshot.val().userTwoUsername) {
-			database.ref().update({
-				userTwoHand: ''
-			});
-			database.ref().update({
-				userOneWins: winsOne
-			});
-			database.ref().update({
-				userTwoWins: winsTwo
-			});
-			database.ref().update({
-				userOneLosses: 0
-			});
-			database.ref().update({
-				userTwoLosses: 0
-			});
-			database.ref().update({
-				ties: 0
-			});
-		}
 
-		// determineIfThereAreTwoPlayers();
-	});
+			// hides username field and btn
+			$('#set-username').hide();
+			$('#username').hide();
+		});
+	}
 
+	// Sends messenger message to firebase
+	function sendMessage() {
+		$('#message-btn').on('click', function() {
+		  // Grabs user input
+		  var messageInput = $('#message-input').val().trim();
+		  // Creates local object for holding message data
+		  var message = {
+		  	timestamp: firebase.database.ServerValue.TIMESTAMP,
+		    user: userObj.username,
+		    message: messageInput,
+		  };
 
+		  // only if the message has content...
+		  if (messageInput !== '') {
+			  // Uploads message data to the database
+			  database.ref().child('messenger').push(message);
+			  // Clears the text-box
+			  $('#message-input').val('');
+			}
 
+		  return false;
+		});
+	}
 
-
-
-
-
-	// Messenger functions GOOD
-	$('#message-btn').on('click', function() {
-
-	  // Grabs user input
-	  var messageInput = $('#message-input').val().trim();
-
-
-	  // Creates local object for holding message data
-	  var message = {
-	    user: localUsername,
-	    message: messageInput,
-	  };
-
-	  if (messageInput !== '') {
-
-		  // Uploads message data to the database
-		  database.ref().child('messenger').push(message);
-
-		  // Clears the text-box
-		  $('#message-input').val('');
-		}
-
-	  // Prevents moving to new page
-	  return false;
-	});
-
-	// Sets messenger updates to DOM GOOD
-	database.ref('messenger').on('child_added', function(childSnapshot, prevChildKey) {
-
-	  // Store everything into a variable.
+	// Grab messages from Firebase and append to DOM
+	function showMessage(childSnapshot) {
 	  var screenname = childSnapshot.val().user;
 	  var messageInput = childSnapshot.val().message;
+	  var time = moment(childSnapshot.val().timestamp).format('M/D/YY h:mm:s a');
 
 	  // Add message to chat room
-	  $('#chat-room').append('<tr><td>' + screenname + '</td><td>: :</td><td>' + messageInput + '</td></tr>');
+	  $('#chat-room').append('<p>' + screenname + ' - ' + time + ': ' + messageInput + '<p>');
+	  // keeps the freshest messages in sight
 	  $('#chat-room').scrollTop($('#chat-room')[0].scrollHeight);
-	});
+	}
+
+	// Determines if user is elligible to play and if it is the
+	// local user, opponent, or some interloper, and then directs
+	// game play
+	function rpsGameAction(childSnapshot) {
+		// Hides game board from interloper if 3 or more player
+		if (numUsers > 2) {
+  		hideGameBoard();
+  	// if the most recent snapshot was not the local user...
+		} else if (userID !== childSnapshot.key) {
+			// set "other user" variables with data
+			otherUserID = childSnapshot.key;
+			otherUserObj.username = childSnapshot.val().username;
+			otherUserObj.hand = childSnapshot.val().hand;
+			// If the other user does something...
+			database.ref('users/' + otherUserID).on('value', function(snap) {
+				// update their stats locally
+				otherUserObj.username = snap.val().username;
+				otherUserObj.hand = snap.val().hand;
+				// Display their username to the local DOM
+				$('#opponent').html(otherUserObj.username);
+				// evaluate the change in data
+				evaluateHands();
+			});
+		// if the most recent snapshot was the local user...
+		} else if (userID === childSnapshot.key) {
+			// and if the local user does something....
+			database.ref('users/' + userID).on('value', function(snap) {
+				// update local variables to insist on staying accurate to Firebase
+				userObj.username = snap.val().username;
+				userObj.hand = snap.val().hand;
+				// evaluate the change in data
+				evaluateHands();
+			});
+		}
+	}
+
+	// updates stats on the DOM then refreshes on timeout
+	function endGameAndRestart() {
+		// Update the DOM
+		$('#winner').html(winner);
+		$('#opponent-hand').html(otherUserObj.hand);
+		$('#wins').html(userObj.wins);
+		$('#losses').html(otherUserObj.wins);
+		$('#ties').html(userObj.ties);
+
+		// Timeout to flash winner and what not for 5 secs
+		setTimeout(function(){
+			usersRef.child(userID).update({
+				hand: '',
+				wins: userObj.wins,
+				losses: otherUserObj.wins
+			});
+
+			winner = '';
+			userObj.hand = '';
+			otherUserObj.hand = '';
+			$('#winner').html(winner);
+			$('#opponent-hand').html(otherUserObj.hand);
+			// shows the hand selection btns again
+			$('.hand-btn').show();
+		}, 5000);
+	}
+
+	// This evaluates the chosen hands and decides outcome
+	function evaluateHands() {
+		if (userObj.hand && otherUserObj.hand !== null) {
+			if (
+				(userObj.hand === 'Rock') && (otherUserObj.hand === 'Scissors') ||
+				(userObj.hand === 'Scissors') && (otherUserObj.hand === 'Paper') ||
+				(userObj.hand === 'Paper') && (otherUserObj.hand === 'Rock')
+			) {
+				userObj.wins++;
+				winner = userObj.username;
+				endGameAndRestart();
+			} else if (
+				(userObj.hand === 'Rock') && (otherUserObj.hand === 'Paper') ||
+				(userObj.hand === 'Scissors') && (otherUserObj.hand === 'Rock') ||
+				(userObj.hand === 'Paper') && (otherUserObj.hand === 'Scissors')
+			){
+				otherUserObj.wins++;
+				winner = otherUserObj.username;
+				endGameAndRestart();
+			} else if (userObj.hand === otherUserObj.hand){
+				winner = 'TIED! No Winner'
+				endGameAndRestart();
+			}
+		} else {
+			return;
+		}
+	};
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
