@@ -31,56 +31,6 @@ $(document).ready(function() {
 	var winner = '';
 	var numUsers = 0;
 
-	showGameBoard();
-
-	// Users Firebase magic to detect when a new user joins
-	connectedRef.on('value', function(snapshot) {
-	  // If they are connected...
-	  if (snapshot.val()) {
-	  	// User is set with an anonymous Firebase authentification ID
-	  	firebase.auth().onAuthStateChanged(function(user) {
-				if (user) {
-					// Firebase ID is the same as the child key for the object
-					// setting it to the userID variable
-					userID = user.uid;
-
-					// Sets the local user object to the object created by firebase upon auth
-					usersRef.child(userID).set(userObj);
-
-			    // Remove user from the connection list when they disconnect.
-			    usersRef.child(userID).onDisconnect().remove();
-
-			    // The first time a user is established, check ONCE for the number of users
-			    usersRef.once('value', function(snapshot) {
-						numUsers = snapshot.numChildren();
-					
-						// When a user is added, evaluate the game action
-				    usersRef.on('child_added', function(childSnapshot) {
-				    	rpsGameAction(childSnapshot);
-						});
-					});
-
-					sendMessage();
-
-					// Sets messenger updates to DOM
-					database.ref('messenger').on('child_added', function(childSnapshot) {
-						showMessage(childSnapshot);
-					});
-
-					setUsername();
-		    	setHand();
-				} else {
-					hideGameBoard();
-
-					// Logs Firebase error to the console if an anon login issue occurred
-					firebase.auth().signInAnonymously().catch(function(error) {
-						console.log( error.code + ": " + error.message );
-					})
-				}
-			});
-	  }
-	});
-
 	// Shows the game board
 	function showGameBoard() {
 		$('#container-1').show();
@@ -246,4 +196,54 @@ $(document).ready(function() {
 			return;
 		}
 	};
+
+	showGameBoard();
+
+	// Users Firebase magic to detect when a new user joins
+	connectedRef.on('value', function(snapshot) {
+	  // If they are connected...
+	  if (snapshot.val()) {
+	  	// User is set with an anonymous Firebase authentification ID
+	  	firebase.auth().onAuthStateChanged(function(user) {
+				if (user) {
+					// Firebase ID is the same as the child key for the object
+					// setting it to the userID variable
+					userID = user.uid;
+
+					// Sets the local user object to the object created by firebase upon auth
+					usersRef.child(userID).set(userObj);
+
+			    // Remove user from the connection list when they disconnect.
+			    usersRef.child(userID).onDisconnect().remove();
+
+			    // The first time a user is established, check ONCE for the number of users
+			    usersRef.once('value', function(snapshot) {
+						numUsers = snapshot.numChildren();
+					
+						// When a user is added, evaluate the game action
+				    usersRef.on('child_added', function(childSnapshot) {
+				    	rpsGameAction(childSnapshot);
+						});
+					});
+
+					sendMessage();
+
+					// Sets messenger updates to DOM
+					database.ref('messenger').on('child_added', function(childSnapshot) {
+						showMessage(childSnapshot);
+					});
+
+					setUsername();
+		    	setHand();
+				} else {
+					hideGameBoard();
+
+					// Logs Firebase error to the console if an anon login issue occurred
+					firebase.auth().signInAnonymously().catch(function(error) {
+						console.log( error.code + ": " + error.message );
+					})
+				}
+			});
+	  }
+	});
 });
